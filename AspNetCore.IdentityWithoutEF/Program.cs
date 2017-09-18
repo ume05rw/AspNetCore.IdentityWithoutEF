@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace AspNetCore.IdentityWithoutEF
+namespace AuthNoneEf
 {
     public class Program
     {

@@ -15,7 +15,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "AspNetCore.IdentityWithoutEF": {
+    "AuthNoneEf": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {

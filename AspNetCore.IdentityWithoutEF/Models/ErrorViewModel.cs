@@ -1,6 +1,6 @@
 using System;
 
-namespace AspNetCore.IdentityWithoutEF.Models
+namespace AuthNoneEf.Models
 {
     public class ErrorViewModel
     {

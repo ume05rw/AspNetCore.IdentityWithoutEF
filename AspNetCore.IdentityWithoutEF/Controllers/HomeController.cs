@@ -4,9 +4,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using AspNetCore.IdentityWithoutEF.Models;
+using AuthNoneEf.Models;
 
-namespace AspNetCore.IdentityWithoutEF.Controllers
+namespace AuthNoneEf.Controllers
 {
     public class HomeController : Controller
     {
