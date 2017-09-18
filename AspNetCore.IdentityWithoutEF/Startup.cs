@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Identity;
+using AuthNoneEf.Models;
 
 namespace AuthNoneEf
 {
@@ -22,6 +24,13 @@ namespace AuthNoneEf
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
+
+            //↓Additional lines after this.
+            services.AddTransient<IUserStore<AuthUser>, AuthUserStore>();
+            services.AddTransient<IRoleStore<AuthRole>, AuthRoleStore>();
+
+            services.AddIdentity<AuthUser, AuthRole>()
+                    .AddDefaultTokenProviders();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -45,6 +54,9 @@ namespace AuthNoneEf
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
+
+            //↓Additional lines after this.
+            app.UseAuthentication();
         }
     }
 }
