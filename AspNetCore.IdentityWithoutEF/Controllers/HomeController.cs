@@ -8,7 +8,7 @@ using AuthNoneEf.Models;
 
 namespace AuthNoneEf.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController : AppController
     {
         public IActionResult Index()
         {
