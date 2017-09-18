@@ -10,5 +10,9 @@ namespace AuthNoneEf.Models
         public Guid Id { get; set; }
 
         public string Name { get; set; }
+
+        public string NormalizedRoleName { get; set; }
+
+        public string RoleId => this.Id.ToString();
     }
 }

@@ -10,9 +10,11 @@ namespace AuthNoneEf.Models
         private const string SqliteFileName = "authNoneEf.sqlite3";
 
         private static readonly string DbPath = System.IO.Path.Combine(
-            System.IO.Directory.GetCurrentDirectory(), 
+            System.Environment.CurrentDirectory, 
             DbProvider.SqliteFileName
         );
+
+        public static event EventHandler DbReady;
 
         private static Xb.Db.Sqlite _db;
 
@@ -23,19 +25,35 @@ namespace AuthNoneEf.Models
                 if (DbProvider._db != null)
                     return DbProvider._db;
 
-                if (!System.IO.File.Exists(DbProvider.DbPath))
-                    DbProvider.CreateDb();
+                DbProvider.Init();
 
-                DbProvider._db = new Xb.Db.Sqlite(DbProvider.DbPath);
                 return DbProvider._db;
             }
+        }
+
+        public static bool IsDbReady => (DbProvider._db != null);
+
+        private static bool _initOnce = false;
+        public static void Init()
+        {
+            if (DbProvider._initOnce)
+                return;
+            DbProvider._initOnce = true;
+
+            if (!System.IO.File.Exists(DbProvider.DbPath))
+                DbProvider.CreateDb();
+
+            DbProvider._db = new Xb.Db.Sqlite(DbProvider.DbPath);
+
+            DbProvider.DbReady?.Invoke(null, new EventArgs());
         }
 
         private static void CreateDb()
         {
             var tableModels = new AppDbModel[]
             {
-                (new AuthUserStore())
+                (new AuthUserStore()),
+                (new AuthRoleStore()),
             };
             var db = new Xb.Db.Sqlite(DbProvider.DbPath);
 

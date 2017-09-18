@@ -43,10 +43,21 @@ namespace AuthNoneEf.Models
 
         protected AppDbModel()
         {
-            if (DbProvider.Db != null)
+            if (DbProvider.IsDbReady)
             {
+                this.Out("AppDbModel.Constructor.DbReady");
                 this.Db = DbProvider.Db;
                 this.DbModel = this.Db.Models[this.TableName];
+            }
+            else
+            {
+                DbProvider.Init();
+                DbProvider.DbReady += (sender, e) => 
+                {
+                    this.Out("AppDbModel.Constructor.OnDbReady");
+                    this.Db = DbProvider.Db;
+                    this.DbModel = this.Db.Models[this.TableName];
+                };
             }
         }
 

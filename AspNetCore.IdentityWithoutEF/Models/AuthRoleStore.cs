@@ -4,59 +4,313 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
+using Xb.Db;
 
 namespace AuthNoneEf.Models
 {
-    public class AuthRoleStore : AppModel, IRoleStore<AuthRole>
+    public class AuthRoleStore : AppDbModel, IRoleStore<AuthRole>
     {
+        #region "AppDbModel Implements"
+        public override string TableName => "Roles";
+
+        protected override Dictionary<string, string> DbColumnDefinitions => new Dictionary<string, string>()
+        {
+            { "Id" , "TEXT NOT NULL" },
+            { "Name" , "TEXT NOT NULL" },
+            { "NormalizedRoleName" , "TEXT NOT NULL" },
+        };
+
+        protected override List<string> DbAdditionalDefinitions => new List<string>()
+        {
+            "PRIMARY KEY (Id)"
+        };
+
+        protected override void FormatDbInitData(Sqlite db)
+        {
+            //No init data.
+        }
+        #endregion "AppDbModel Implements"
+
+        private static IdentityErrorDescriber IdentityErrorDescriber
+            = new IdentityErrorDescriber();
+
+        /// <summary>
+        /// ロールからDBレコードを生成する。
+        /// </summary>
+        /// <param name="role"></param>
+        /// <returns></returns>
+        private Xb.Db.ResultRow GetRow(AuthRole role = null)
+        {
+            var row = this.DbModel.NewRow();
+            if (role == null)
+                return row;
+
+            row["Id"] = role.RoleId;
+            row["Name"] = role.Name;
+            row["NormalizedRoleName"] = role.NormalizedRoleName;
+
+            return row;
+        }
+
+        /// <summary>
+        /// DBレコードからロールを生成する。
+        /// </summary>
+        /// <param name="row"></param>
+        /// <returns></returns>
+        private AuthRole GetRole(Xb.Db.ResultRow row)
+        {
+            var role = new AuthRole();
+            role.Id = Guid.Parse(row.Get<string>("Id"));
+            role.Name = row.Get<string>("Name");
+            role.NormalizedRoleName = row.Get<string>("NormalizedRoleName");
+
+            return role;
+        }
+
+        /// <summary>
+        /// ロール追加
+        /// </summary>
+        /// <param name="role"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public Task<IdentityResult> CreateAsync(AuthRole role, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            this.Out("AuthRoleStore.CreateAsync");
+
+            cancellationToken.ThrowIfCancellationRequested();
+            this.ThrowIfDisposed();
+
+            if (role == null)
+                throw new ArgumentNullException(nameof(role));
+
+            var row = this.GetRow(role);
+            var result = this.DbModel.Write(row);
+
+            if (result.Length > 0)
+            {
+                return Task.FromResult(
+                    IdentityResult.Failed(IdentityErrorDescriber.ConcurrencyFailure())
+                );
+            }
+
+            return Task.FromResult(IdentityResult.Success);
         }
 
-        public Task<IdentityResult> DeleteAsync(AuthRole role, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<AuthRole> FindByIdAsync(string roleId, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<AuthRole> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<string> GetNormalizedRoleNameAsync(AuthRole role, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<string> GetRoleIdAsync(AuthRole role, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<string> GetRoleNameAsync(AuthRole role, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task SetNormalizedRoleNameAsync(AuthRole role, string normalizedName, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task SetRoleNameAsync(AuthRole role, string roleName, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
+        /// <summary>
+        /// ロール更新
+        /// </summary>
+        /// <param name="role"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public Task<IdentityResult> UpdateAsync(AuthRole role, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            this.Out("AuthRoleStore.UpdateAsync");
+
+            cancellationToken.ThrowIfCancellationRequested();
+            this.ThrowIfDisposed();
+
+            if (role == null)
+                throw new ArgumentNullException(nameof(role));
+
+            var row = this.GetRow(role);
+            var result = this.DbModel.Write(row);
+
+            if (result.Length > 0)
+            {
+                return Task.FromResult(
+                    IdentityResult.Failed(IdentityErrorDescriber.ConcurrencyFailure())
+                );
+            }
+
+            return Task.FromResult(IdentityResult.Success);
         }
+
+        /// <summary>
+        /// ロール削除
+        /// </summary>
+        /// <param name="role"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task<IdentityResult> DeleteAsync(AuthRole role, CancellationToken cancellationToken)
+        {
+            this.Out("AuthRoleStore.DeleteAsync");
+
+            cancellationToken.ThrowIfCancellationRequested();
+            this.ThrowIfDisposed();
+
+            if (role == null)
+                throw new ArgumentNullException(nameof(role));
+
+            var row = this.GetRow(role);
+            var result = this.DbModel.Delete(row);
+
+            if (result.Length > 0)
+            {
+                return Task.FromResult(
+                    IdentityResult.Failed(IdentityErrorDescriber.ConcurrencyFailure())
+                );
+            }
+
+            return Task.FromResult(IdentityResult.Success);
+        }
+
+        /// <summary>
+        /// ロールをIDで検索する。
+        /// </summary>
+        /// <param name="roleId"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task<AuthRole> FindByIdAsync(string roleId, CancellationToken cancellationToken)
+        {
+            this.Out("AuthRoleStore.FindByIdAsync");
+
+            cancellationToken.ThrowIfCancellationRequested();
+            this.ThrowIfDisposed();
+
+            if (string.IsNullOrEmpty(roleId))
+                throw new ArgumentNullException(nameof(roleId));
+
+            var row = this.DbModel.Find(roleId);
+            if (row == null)
+                return Task.FromResult<AuthRole>(null);
+
+            var user = this.GetRole(row);
+
+            return Task.FromResult(user);
+        }
+
+        /// <summary>
+        /// ロールを名前で検索する。
+        /// </summary>
+        /// <param name="normalizedRoleName"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task<AuthRole> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)
+        {
+            this.Out("AuthRoleStore.FindByNameAsync");
+
+            cancellationToken.ThrowIfCancellationRequested();
+            this.ThrowIfDisposed();
+
+            if (string.IsNullOrEmpty(normalizedRoleName))
+                throw new ArgumentNullException(nameof(normalizedRoleName));
+
+            var where = $"NormalizedLoginName = { this.Db.Quote(normalizedRoleName) }";
+            var table = this.DbModel.FindAll(where);
+            if (table.RowCount <= 0)
+                return Task.FromResult<AuthRole>(null);
+
+            var user = this.GetRole(table.Rows[0]);
+
+            return Task.FromResult(user);
+        }
+
+        /// <summary>
+        /// ロールの平坦化名称を取得する。
+        /// </summary>
+        /// <param name="role"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task<string> GetNormalizedRoleNameAsync(AuthRole role, CancellationToken cancellationToken)
+        {
+            this.Out("AuthRoleStore.GetNormalizedRoleNameAsync");
+
+            cancellationToken.ThrowIfCancellationRequested();
+            this.ThrowIfDisposed();
+
+            if (role == null)
+                throw new ArgumentNullException(nameof(role));
+
+            return Task.FromResult(role.NormalizedRoleName);
+        }
+
+        /// <summary>
+        /// ロールの平坦化名称をセットする。
+        /// </summary>
+        /// <param name="role"></param>
+        /// <param name="normalizedName"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task SetNormalizedRoleNameAsync(AuthRole role, string normalizedName, CancellationToken cancellationToken)
+        {
+            this.Out("AuthRoleStore.SetNormalizedRoleNameAsync");
+
+            cancellationToken.ThrowIfCancellationRequested();
+            this.ThrowIfDisposed();
+
+            if (role == null)
+                throw new ArgumentNullException(nameof(role));
+
+            role.NormalizedRoleName = normalizedName;
+
+            //DO NOT Write DB. Update role-object field only.
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// ロールIDを取得する。
+        /// </summary>
+        /// <param name="role"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task<string> GetRoleIdAsync(AuthRole role, CancellationToken cancellationToken)
+        {
+            this.Out("AuthRoleStore.GetRoleIdAsync");
+
+            cancellationToken.ThrowIfCancellationRequested();
+            this.ThrowIfDisposed();
+
+            if (role == null)
+                throw new ArgumentNullException(nameof(role));
+
+            return Task.FromResult(role.RoleId);
+        }
+
+        /// <summary>
+        /// ロール名を取得する。
+        /// </summary>
+        /// <param name="role"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task<string> GetRoleNameAsync(AuthRole role, CancellationToken cancellationToken)
+        {
+            this.Out("AuthRoleStore.GetRoleNameAsync");
+
+            cancellationToken.ThrowIfCancellationRequested();
+            this.ThrowIfDisposed();
+
+            if (role == null)
+                throw new ArgumentNullException(nameof(role));
+
+            return Task.FromResult(role.Name);
+        }
+
+
+        /// <summary>
+        /// ロール名をセットする。
+        /// </summary>
+        /// <param name="role"></param>
+        /// <param name="roleName"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task SetRoleNameAsync(AuthRole role, string roleName, CancellationToken cancellationToken)
+        {
+            this.Out("AuthRoleStore.SetRoleNameAsync");
+
+            cancellationToken.ThrowIfCancellationRequested();
+            this.ThrowIfDisposed();
+
+            if (role == null)
+                throw new ArgumentNullException(nameof(role));
+
+            role.Name = roleName;
+
+            //DO NOT Write DB. Update role-object field only.
+
+            return Task.CompletedTask;
+        }
+
+
     }
 }
