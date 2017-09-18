@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace AuthNoneEf.Models
 {
-    public class AppModel
+    public abstract class AppModel
     {
         /// <summary>
         /// Output messages to console(immidiate/output window)
@@ -28,5 +28,23 @@ namespace AuthNoneEf.Models
         {
             Xb.Util.Out(ex);
         }
+
+        /// <summary>
+        /// 破棄する
+        /// </summary>
+        public void Dispose()
+        {
+            this._disposed = true;
+        }
+
+        protected void ThrowIfDisposed()
+        {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(GetType().Name);
+            }
+        }
+
+        private bool _disposed;
     }
 }
