@@ -40,6 +40,17 @@ namespace AuthNoneEf.Models
         /// </remarks>
         protected abstract List<string> DbAdditionalDefinitions { get; }
 
+
+        protected AppDbModel()
+        {
+            if (DbProvider.Db != null)
+            {
+                this.Db = DbProvider.Db;
+                this.DbModel = this.Db.Models[this.TableName];
+            }
+        }
+
+
         /// <summary>
         /// 渡し値DBカラムの追加SQL文字列を取得する。
         /// </summary>
