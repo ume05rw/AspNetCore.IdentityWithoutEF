@@ -30,5 +30,20 @@ namespace AuthNoneEf.Models.Api
         /// 値が等価でない
         /// </summary>
         ValueNotSame = 203,
+
+        /// <summary>
+        /// ロックされている
+        /// </summary>
+        Lockouted = 301,
+
+        /// <summary>
+        /// 許可されていない
+        /// </summary>
+        NotAllowed = 302,
+
+        /// <summary>
+        /// 2ファクタ認証が必要
+        /// </summary>
+        RequiresTwoFactor = 303,
     }
 }

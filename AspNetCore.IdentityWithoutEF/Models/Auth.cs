@@ -46,7 +46,8 @@ namespace AuthNoneEf.Models
             var response = new Api.Response();
             var errList = response.Errors;
 
-            if (!dictionary.ContainsKey("LoginName"))
+            if (!dictionary.ContainsKey("LoginName")
+                || string.IsNullOrEmpty(dictionary["LoginName"]))
                 errList.Add(new Api.Error()
                 {
                     Item = "LoginName",
@@ -54,7 +55,8 @@ namespace AuthNoneEf.Models
                     Message = "LoginName not found."
                 });
 
-            if (!dictionary.ContainsKey("Password"))
+            if (!dictionary.ContainsKey("Password")
+                || string.IsNullOrEmpty(dictionary["Password"]))
                 errList.Add(new Api.Error()
                 {
                     Item = "Password",
@@ -62,7 +64,8 @@ namespace AuthNoneEf.Models
                     Message = "Password not found"
                 });
 
-            if (!dictionary.ContainsKey("PasswordRetype"))
+            if (!dictionary.ContainsKey("PasswordRetype")
+                || string.IsNullOrEmpty(dictionary["PasswordRetype"]))
                 errList.Add(new Api.Error()
                 {
                     Item = "PasswordRetype",
@@ -85,18 +88,19 @@ namespace AuthNoneEf.Models
                 return response;
             }
 
+            var loginName = dictionary["LoginName"];
             var password = dictionary["Password"];
             var user = new AuthUser()
             {
-                LoginName = dictionary["LoginName"],
-                NormalizedLoginName = this._userManager.NormalizeKey(dictionary["LoginName"]),
-                ScreenName = dictionary["LoginName"],
+                LoginName = loginName,
+                NormalizedLoginName = this._userManager.NormalizeKey(loginName),
+                ScreenName = loginName,
             };
-            var createResult = await this._userManager.CreateAsync(user, password);
+            var result = await this._userManager.CreateAsync(user, password);
 
-            if (!createResult.Succeeded)
+            if (!result.Succeeded)
             {
-                errList.AddRange(createResult.Errors.Select(e => new Api.Error()
+                errList.AddRange(result.Errors.Select(e => new Api.Error()
                 {
                     Item = "",
                     //Code = e.Code,
@@ -105,6 +109,85 @@ namespace AuthNoneEf.Models
 
                 return response;
             }
+
+            response.Succeeded = true;
+            return response;
+        }
+
+
+        public async Task<Api.Response> SignInAsync(Dictionary<string, string> dictionary)
+        {
+            var response = new Api.Response();
+            var errList = response.Errors;
+
+            if (!dictionary.ContainsKey("LoginName")
+                || string.IsNullOrEmpty(dictionary["LoginName"]))
+                errList.Add(new Api.Error()
+                {
+                    Item = "LoginName",
+                    Code = Api.ErrorCode.ItemNotFound,
+                    Message = "LoginName not found."
+                });
+
+            if (!dictionary.ContainsKey("Password")
+                || string.IsNullOrEmpty(dictionary["Password"]))
+                errList.Add(new Api.Error()
+                {
+                    Item = "Password",
+                    Code = Api.ErrorCode.ItemNotFound,
+                    Message = "Password not found"
+                });
+
+            //項目が一つでも不足しているとき、エラー応答。
+            if (errList.Count > 0)
+                return response;
+
+            var result = await this._signInManager.PasswordSignInAsync(
+                dictionary["LoginName"],
+                dictionary["Password"], 
+                false, 
+                false
+            );
+
+            if (!result.Succeeded)
+            {
+                if (result.IsLockedOut)
+                    errList.Add(new Api.Error() {
+                        Item = "",
+                        Code = Api.ErrorCode.Lockouted,
+                        Message = "Account locked",
+                    });
+
+                if (result.IsNotAllowed)
+                    errList.Add(new Api.Error()
+                    {
+                        Item = "",
+                        Code = Api.ErrorCode.NotAllowed,
+                        Message = "Not Allowd",
+                    });
+
+                if (result.RequiresTwoFactor)
+                    errList.Add(new Api.Error()
+                    {
+                        Item = "",
+                        Code = Api.ErrorCode.RequiresTwoFactor,
+                        Message = "Required 2-Factor Auth",
+                    });
+
+                return response;
+            }
+
+            response.Succeeded = true;
+            return response;
+        }
+
+
+        public async Task<Api.Response> SignOutAsync()
+        {
+            var response = new Api.Response();
+            var errList = response.Errors;
+
+            await this._signInManager.SignOutAsync();
 
             response.Succeeded = true;
             return response;

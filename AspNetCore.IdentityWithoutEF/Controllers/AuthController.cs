@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using AuthNoneEf.Models;
 using AuthNoneEf.Models.Api.ErrorResponse;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AuthNoneEf.Controllers
 {
@@ -20,34 +21,43 @@ namespace AuthNoneEf.Controllers
             this._auth = Models.Auth.GetInstance(userManager, signInManager);
         }
 
+        [AllowAnonymous]
         public IActionResult Index()
         {
             return View();
         }
 
+        [AllowAnonymous]
         public async Task<IActionResult> Api()
         {
             try
             {
                 this.Out("Headers: \r\n" + string.Join("\r\n", this.Request.Headers.Select(h => h.Key + ": " + h.Value)));
 
-                var bodyString = Xb.Str.GetString(this.Request.Body);
-                Dictionary<string, string> dictionary;
+                var queryJson = this.Request.Query
+                                            .Select(q => q.Key)
+                                            .FirstOrDefault(k => k.IndexOf('{') >= 0
+                                                                 && k.IndexOf('}') >= 0);
 
+                var bodyString = Xb.Str.GetString(this.Request.Body);
+                var passingString = !string.IsNullOrEmpty(bodyString)
+                    ? bodyString
+                    : Xb.Net.Http.DecodeUri(queryJson);
+                
+                Dictionary<string, string> dictionary;
                 try
                 {
-                    dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(bodyString);
+                    dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(passingString);
                 }
                 catch (Exception)
                 {
                     return Json(new ParseErrorResponse(bodyString));
                 }
 
-
                 switch (this.Request.Method.ToUpper())
                 {
                     case "GET":
-                        break;
+                        return Json(await this._auth.SignInAsync(dictionary));
 
                     case "POST":
                     case "PUT":
@@ -56,7 +66,7 @@ namespace AuthNoneEf.Controllers
                         return Json(await this._auth.CreateAsync(dictionary));
 
                     case "DELETE":
-                        break;
+                        return Json(await this._auth.SignOutAsync());
 
                     case "HEAD":
                     case "CONNECT":

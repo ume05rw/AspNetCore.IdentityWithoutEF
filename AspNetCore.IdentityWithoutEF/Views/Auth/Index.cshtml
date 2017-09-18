@@ -87,7 +87,8 @@ $(function () {
         $form: $("form#authBox"),
 
         infoBox: null,
-        query: null,
+        queryRegister: null,
+        queryLogin: null,
 
         __constructor: function () { 
 
@@ -96,10 +97,19 @@ $(function () {
                 type: app.infoBox.Type.Warning,
             });
 
-            this.query = new app.query({
+            this.queryRegister = new app.query({
                 url: "/auth/api",
+                method: app.query.MethodType.Post,
                 caller: this,
-                callback: this.queryCallback,
+                callback: this.queryRegisterCallback,
+                failureCallback: this.queryFailureCallback,
+            });
+
+            this.queryLogin = new app.query({
+                url: "/auth/api",
+                method: app.query.MethodType.Get,
+                caller: this,
+                callback: this.queryLoginCallback,
                 failureCallback: this.queryFailureCallback,
             });
 
@@ -112,14 +122,11 @@ $(function () {
             if (!this.localValidation())
                 return;
 
-            //this.$form.submit();
-            //return;
-
             var value = {};
             $(this.$form.serializeArray()).each(function (i, v) {
                 value[v.name] = v.value;
             });
-            this.query.exec(value);
+            this.queryRegister.exec(value);
         },
 
         localValidation: function () {
@@ -141,20 +148,42 @@ $(function () {
             return true;
         },
 
-        queryCallback: function (res) {
+        queryRegisterCallback: function (res) {
 
-            if (res.succeeded == false) {
-                var messages = [];
-                $.each(res.errors, function (i, val) { 
-                    messages.push(val.message);
+            if (res.succeeded) {
+
+                var value = {};
+                $(this.$form.serializeArray()).each(function (i, v) {
+                    value[v.name] = v.value;
                 });
+                this.queryLogin.exec(value);
 
-                this.infoBox.show(messages);
+            } else {
+                this.onResultError(res.errors);
             }
         },
 
-        queryFailureCallback: function (data) {
+        queryLoginCallback: function (res) {
 
+            if (res.succeeded) {
+                window.location.assign("/home/");
+            } else {
+                this.onResultError(res.errors);
+            }
+        },
+
+        onResultError: function (errors) {
+
+            var messages = [];
+            $.each(errors, function (i, val) {
+                messages.push(val.message);
+            });
+
+            this.infoBox.show(messages);
+        },
+
+        queryFailureCallback: function (data) {
+            alert("ajax query failure");
         },
     };
 
