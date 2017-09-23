@@ -18,11 +18,45 @@ namespace AuthNoneEf.Controllers
         public AuthController(UserManager<AuthUser> userManager,
                               SignInManager<AuthUser> signInManager)
         {
-            this._auth = Models.Auth.GetInstance(userManager, signInManager);
+            this._auth = new Auth(userManager, signInManager);
         }
 
         [AllowAnonymous]
         public IActionResult Index()
+        {
+            return this.RedirectToAction("Login");
+        }
+
+        [AllowAnonymous]
+        public async Task<IActionResult> Login()
+        {
+            if (this.Request.Method.ToUpper() == "POST")
+            {
+                //postbacked
+                var dictionary = new Dictionary<string, string>();
+                dictionary.Add("LoginName", this.Request.Form["LoginName"]);
+                dictionary.Add("Password", this.Request.Form["Password"]);
+                var result = await this._auth.SignInAsync(dictionary);
+                this.ViewData["LoginResult"] = result;
+            }
+            return View();
+        }
+
+        [AllowAnonymous]
+        public async Task<IActionResult> Logout()
+        {
+            await this._auth.SignOutAsync();
+            return this.RedirectToAction("Login");
+        }
+
+        [AllowAnonymous]
+        public IActionResult Register()
+        {
+            return View();
+        }
+        
+        [Authorize]
+        public IActionResult MemberOnly()
         {
             return View();
         }
@@ -32,8 +66,6 @@ namespace AuthNoneEf.Controllers
         {
             try
             {
-                this.Out("Headers: \r\n" + string.Join("\r\n", this.Request.Headers.Select(h => h.Key + ": " + h.Value)));
-
                 var queryJson = this.Request.Query
                                             .Select(q => q.Key)
                                             .FirstOrDefault(k => k.IndexOf('{') >= 0
@@ -75,8 +107,6 @@ namespace AuthNoneEf.Controllers
                     default:
                         throw new NotImplementedException($"Undefineded method: {this.Request.Method}");
                 }
-
-                return Json(false);
             }
             catch (Exception ex)
             {

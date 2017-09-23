@@ -7,42 +7,23 @@ using System.Linq;
 
 namespace AuthNoneEf.Models
 {
-    public class Auth
+    public class Auth : AppModel
     {
-        private static Auth _instance;
-        public static Auth GetInstance(UserManager<AuthUser> userManager,
-                                       SignInManager<AuthUser> signInManager)
+        public UserManager<AuthUser> UserManager { get; protected set; }
+        public SignInManager<AuthUser> SignInManager { get; protected set; }
+
+        public Auth(UserManager<AuthUser> userManager,
+                    SignInManager<AuthUser> signInManager)
         {
-            if (Auth._instance != null)
-            {
-                Auth._instance.SetDependencies(userManager, signInManager);
-                return Auth._instance;
-            }
-
-            Auth._instance = new Auth();
-            Auth._instance.SetDependencies(userManager, signInManager);
-
-            return Auth._instance;
-        }
-
-
-
-        private UserManager<AuthUser> _userManager;
-        private SignInManager<AuthUser> _signInManager;
-
-        private Auth()
-        {
-        }
-
-        private void SetDependencies(UserManager<AuthUser> userManager,
-                                     SignInManager<AuthUser> signInManager)
-        {
-            this._userManager = userManager;
-            this._signInManager = signInManager;
+            this.UserManager = userManager;
+            this.SignInManager = signInManager;
         }
 
         public async Task<Api.Response> CreateAsync(Dictionary<string, string> dictionary)
         {
+            this.Out("CreateAsync");
+            this.OutJson(dictionary);
+
             var response = new Api.Response();
             var errList = response.Errors;
 
@@ -93,10 +74,10 @@ namespace AuthNoneEf.Models
             var user = new AuthUser()
             {
                 LoginName = loginName,
-                NormalizedLoginName = this._userManager.NormalizeKey(loginName),
+                NormalizedLoginName = this.UserManager.NormalizeKey(loginName),
                 ScreenName = loginName,
             };
-            var result = await this._userManager.CreateAsync(user, password);
+            var result = await this.UserManager.CreateAsync(user, password);
 
             if (!result.Succeeded)
             {
@@ -117,6 +98,9 @@ namespace AuthNoneEf.Models
 
         public async Task<Api.Response> SignInAsync(Dictionary<string, string> dictionary)
         {
+            this.Out("SignInAsync");
+            this.OutJson(dictionary);
+
             var response = new Api.Response();
             var errList = response.Errors;
 
@@ -142,12 +126,17 @@ namespace AuthNoneEf.Models
             if (errList.Count > 0)
                 return response;
 
-            var result = await this._signInManager.PasswordSignInAsync(
-                dictionary["LoginName"],
+            var userName = dictionary["LoginName"];
+
+            this.Out("SignInAsync - SignInManager.PasswordSignInAsync Start");
+            var result = await this.SignInManager.PasswordSignInAsync(
+                userName,
                 dictionary["Password"], 
                 false, 
                 false
             );
+            this.Out("SignInAsync - SignInManager.PasswordSignInAsync End");
+            this.OutJson(result);
 
             if (!result.Succeeded)
             {
@@ -187,7 +176,7 @@ namespace AuthNoneEf.Models
             var response = new Api.Response();
             var errList = response.Errors;
 
-            await this._signInManager.SignOutAsync();
+            await this.SignInManager.SignOutAsync();
 
             response.Succeeded = true;
             return response;
